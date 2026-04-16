@@ -1,10 +1,8 @@
-pytubefix
-fastapi
-uvicorn
-pyrogram
-tgcrypto
+asyncio==3.4.3
+httpx==0.25.0
 motor
-aiohttp
-yt-dlp
+tgcrypto
 youtube-search-python
-httpx==0.27.0
+kurigram
+yt-dlp-ejs
+yt-dlp
