@@ -1,3 +1,4 @@
+aiohttp
 asyncio==3.4.3
 httpx==0.25.0
 motor==3.6.1
