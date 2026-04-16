@@ -1,3 +1,4 @@
+pytubefix
 fastapi
 uvicorn
 pyrogram
