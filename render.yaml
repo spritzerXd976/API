@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: telegram-audio-api
+    runtime: python
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: python AdityaHalder.py
+
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10
+
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: BOT_TOKEN
+        sync: false
+      - key: MONGO_URL
+        sync: false
+      - key: CHANNEL_ID
+        sync: false
+      - key: SUDO_USERS
+        sync: false
