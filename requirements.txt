@@ -1,7 +1,8 @@
+fastapi
+uvicorn
+pyrogram
+tgcrypto
+motor
 aiohttp
-asyncio==3.4.3
-httpx==0.25.0
-motor==3.6.1
-tgcrypto==1.2.5
+yt-dlp
 youtube-search-python
-https://github.com/adityahalder/pyrogram/archive/master.zip
