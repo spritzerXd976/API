@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from pyrogram import Client, idle
 from motor.motor_asyncio import AsyncIOMotorClient
 from youtubesearchpython.__future__ import VideosSearch
+from pytubefix import YouTube
 
 # ================= ENV (SAFE FALLBACK) =================
 api_id = int(os.getenv("API_ID", "28492745"))
@@ -54,45 +55,60 @@ async def download_audio(link: str):
     def run():
         os.makedirs("downloads", exist_ok=True)
 
-        common_opts = {
-            "outtmpl": "downloads/%(id)s.%(ext)s",
-            "quiet": True,
-            "nocheckcertificate": True,
-            "geo_bypass": True,
-            "http_headers": {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-                "Accept-Language": "en-US,en;q=0.9",
-            },
-            "postprocessors": [{
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            }],
-        }
+        # ---- METHOD 1: yt-dlp ----
+        try:
+            common_opts = {
+                "outtmpl": "downloads/%(id)s.%(ext)s",
+                "quiet": True,
+                "nocheckcertificate": True,
+                "geo_bypass": True,
+                "http_headers": {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                    "Accept-Language": "en-US,en;q=0.9",
+                },
+                "postprocessors": [{
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                }],
+            }
 
-        # Try formats one by one until one works
-        formats_to_try = [
-            "bestaudio[ext=m4a]",
-            "bestaudio[ext=webm]",
-            "bestaudio",
-            "worstaudio",
-            "best[ext=mp4]",
-            "best",
-        ]
+            formats_to_try = [
+                "bestaudio[ext=m4a]",
+                "bestaudio[ext=webm]",
+                "bestaudio",
+                "worstaudio",
+                "best[ext=mp4]",
+                "best",
+            ]
 
-        for fmt in formats_to_try:
-            try:
-                ydl_opts = {**common_opts, "format": fmt}
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    info = ydl.extract_info(link, download=True)
-                    base = os.path.splitext(ydl.prepare_filename(info))[0]
-                    path = base + ".mp3"
-                    if os.path.exists(path):
-                        return path
-            except Exception:
-                continue
+            for fmt in formats_to_try:
+                try:
+                    ydl_opts = {**common_opts, "format": fmt}
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        info = ydl.extract_info(link, download=True)
+                        base = os.path.splitext(ydl.prepare_filename(info))[0]
+                        path = base + ".mp3"
+                        if os.path.exists(path):
+                            return path
+                except Exception:
+                    continue
+        except Exception:
+            pass
 
-        raise Exception("All formats failed. Check cookies or yt-dlp version.")
+        # ---- METHOD 2: pytubefix fallback ----
+        try:
+            yt = YouTube(link, use_oauth=False, allow_oauth_cache=True)
+            stream = yt.streams.filter(only_audio=True).order_by("abr").last()
+            if not stream:
+                stream = yt.streams.filter(progressive=True).order_by("resolution").last()
+            out_path = stream.download(output_path="downloads")
+            base = os.path.splitext(out_path)[0]
+            mp3_path = base + ".mp3"
+            os.rename(out_path, mp3_path)
+            return mp3_path
+        except Exception as e2:
+            raise Exception(f"All methods failed: {e2}")
 
     return await loop.run_in_executor(None, run)
 
