@@ -10,10 +10,10 @@ from youtubesearchpython.__future__ import VideosSearch
 
 api_id = 12380656
 api_hash = "d927c13beaaf5110f25c505b7c071273"
-bot_token = "your_bot_token"
-mongo_url = "your_mongo_db_url"
-channel_id = -1003015175237
-sudo_users = [7615306685]
+bot_token = "8104460140:AAEnI5F2oBkRSKMPgHh6L5O3s6D_5-ap8XA"
+mongo_url = "mongodb+srv://Mafia:Mafia@mafia.wvuzxgl.mongodb.net/?retryWrites=true&w=majority"
+channel_id = -1002362100657
+sudo_users = [6035523795]
 
 
 sudoers = filters.user()
