@@ -1,8 +1,6 @@
 import aiohttp
 import asyncio
 import os
-import re
-import uvicorn
 import yt_dlp
 
 from typing import Union
@@ -11,7 +9,7 @@ from pyrogram import Client, idle
 from motor.motor_asyncio import AsyncIOMotorClient
 from youtubesearchpython.__future__ import VideosSearch
 
-# ================= ENV =================
+# ================= ENV (SAFE FALLBACK) =================
 api_id = int(os.getenv("API_ID", "28492745"))
 api_hash = os.getenv("API_HASH", "0241a9746f6e264fe7f75cf209177246")
 bot_token = os.getenv("BOT_TOKEN", "8104460140:AAEnI5F2oBkRSKMPgHh6L5O3s6D_5-ap8XA")
@@ -29,14 +27,6 @@ class Bot(Client):
             api_hash=api_hash,
             bot_token=bot_token,
         )
-
-    async def start(self):
-        await super().start()
-        print("✅ Bot Started!")
-
-    async def stop(self, *args):
-        await super().stop()
-        print("❌ Bot Stopped!")
 
 bot = Bot()
 
@@ -110,15 +100,13 @@ async def get_audio_url(query: Union[str, None] = None):
         if not duration:
             return {"error": "Live not supported"}
 
-        # cached
+        # cache
         if await is_served_audio(vid):
             data = await get_served_audio(vid)
             return {"link": data["link"]}
 
-        # download
         file_path = await download_audio(link)
 
-        # upload
         msg = await bot.send_audio(
             channel_id,
             audio=file_path,
@@ -136,26 +124,19 @@ async def get_audio_url(query: Union[str, None] = None):
     except Exception as e:
         return {"error": str(e)}
 
-# ================= MAIN =================
-async def main():
-    port = int(os.environ.get("PORT", 1470))  # fallback to 1470
+# ================= BOT BACKGROUND =================
+@app.on_event("startup")
+async def startup():
+    asyncio.create_task(start_bot())
 
-    config = uvicorn.Config(
-        app,
-        host="0.0.0.0",
-        port=port,
-        log_level="info"
-    )
-
-    server = uvicorn.Server(config)
-
-    api_task = asyncio.create_task(server.serve())
-
+async def start_bot():
     await bot.start()
+    print("✅ Bot Started!")
     await idle()
     await bot.stop()
 
-    await api_task
-
+# ================= MAIN =================
 if __name__ == "__main__":
-    asyncio.run(main())
+    port = int(os.environ.get("PORT", 1470))
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=port)
