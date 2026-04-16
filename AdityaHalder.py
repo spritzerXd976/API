@@ -9,6 +9,7 @@ from pyrogram import Client, idle
 from motor.motor_asyncio import AsyncIOMotorClient
 from youtubesearchpython.__future__ import VideosSearch
 from pytubefix import YouTube
+from pytubefix.innertube import _default_clients
 
 # ================= ENV (SAFE FALLBACK) =================
 api_id = int(os.getenv("API_ID", "28492745"))
@@ -18,6 +19,9 @@ mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Mafia:Mafia@mafia.wvuzxgl.mong
 
 channel_id = int(os.getenv("CHANNEL_ID", "-1002362100657"))
 sudo_users = list(map(int, os.getenv("SUDO_USERS", "6035523795").split(",")))
+
+po_token = os.getenv("PO_TOKEN", "MniJ8-uPxkMu94nPi_sy6PTkQaTX01vR_Q-oD qrPJK2PxvorDEQQMRAFzxekrSWaQu82sZ-RqcN _-kfUI34Xmh1GteltmE0m39nBV3sHGRiuU6Zws QCnugsspcW8tY3gSi9fVNiqHQGWhvFTEpDQZ8U fU3x151LSgNE=")
+visitor_data = os.getenv("VISITOR_DATA", "CgtjNW5HUmRVd1RZbyi_-Y HPBjIKCgJVUxIEGgAgUw%3D%3D")
 
 # ================= BOT =================
 class Bot(Client):
@@ -96,12 +100,24 @@ async def download_audio(link: str):
         except Exception:
             pass
 
-        # ---- METHOD 2: pytubefix fallback ----
+        # ---- METHOD 2: pytubefix with PO Token ----
         try:
-            yt = YouTube(link, use_oauth=False, allow_oauth_cache=True)
+            # Patch client to use ANDROID which bypasses bot detection
+            _default_clients["ANDROID"]["context"]["client"]["clientVersion"] = "19.09.3"
+            _default_clients["ANDROID_MUSIC"] = _default_clients["ANDROID"]
+
+            token_kwargs = {}
+            if po_token and visitor_data:
+                token_kwargs = {
+                    "use_po_token": True,
+                    "po_token_verifier": lambda: (visitor_data, po_token),
+                }
+
+            yt = YouTube(link, client="ANDROID_MUSIC", **token_kwargs)
             stream = yt.streams.filter(only_audio=True).order_by("abr").last()
             if not stream:
                 stream = yt.streams.filter(progressive=True).order_by("resolution").last()
+
             out_path = stream.download(output_path="downloads")
             base = os.path.splitext(out_path)[0]
             mp3_path = base + ".mp3"
