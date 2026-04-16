@@ -47,7 +47,7 @@ async def add_served_audio(id: str, link: str):
 async def get_served_audio(id: str):
     return await audiodb.find_one({"id": id})
 
-# ================= DOWNLOAD =================
+# ================= DOWNLOAD (UPDATED FIX) =================
 async def download_audio(link: str):
     loop = asyncio.get_running_loop()
 
@@ -58,6 +58,16 @@ async def download_audio(link: str):
             "format": "bestaudio/best",
             "outtmpl": "downloads/%(id)s.%(ext)s",
             "quiet": True,
+
+            # ✅ FIX: bypass YouTube block
+            "cookiefile": "Cookies.txt",
+            "http_headers": {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+
+            "nocheckcertificate": True,
+            "geo_bypass": True,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
