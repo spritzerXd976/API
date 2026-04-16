@@ -54,18 +54,15 @@ async def download_audio(link: str):
     def run():
         os.makedirs("downloads", exist_ok=True)
 
-        ydl_opts = {
-            "format": "bestaudio/best",
+        common_opts = {
             "outtmpl": "downloads/%(id)s.%(ext)s",
             "quiet": True,
-            "cookiefile": "Cookies.txt",
+            "nocheckcertificate": True,
+            "geo_bypass": True,
             "http_headers": {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
                 "Accept-Language": "en-US,en;q=0.9",
             },
-            "nocheckcertificate": True,
-            "geo_bypass": True,
-            "format_sort": ["acodec:mp4a", "acodec:opus", "acodec:vorbis"],
             "postprocessors": [{
                 "key": "FFmpegExtractAudio",
                 "preferredcodec": "mp3",
@@ -73,21 +70,29 @@ async def download_audio(link: str):
             }],
         }
 
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=False)
-            formats = info.get("formats", [])
+        # Try formats one by one until one works
+        formats_to_try = [
+            "bestaudio[ext=m4a]",
+            "bestaudio[ext=webm]",
+            "bestaudio",
+            "worstaudio",
+            "best[ext=mp4]",
+            "best",
+        ]
 
-            audio_formats = [f for f in formats if f.get("acodec") != "none"]
-            if not audio_formats:
-                audio_formats = formats
+        for fmt in formats_to_try:
+            try:
+                ydl_opts = {**common_opts, "format": fmt}
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    info = ydl.extract_info(link, download=True)
+                    base = os.path.splitext(ydl.prepare_filename(info))[0]
+                    path = base + ".mp3"
+                    if os.path.exists(path):
+                        return path
+            except Exception:
+                continue
 
-            best = sorted(audio_formats, key=lambda f: f.get("abr") or 0, reverse=True)[0]
-            ydl_opts["format"] = best["format_id"]
-
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(link, download=True)
-            base = os.path.splitext(ydl.prepare_filename(info))[0]
-            return base + ".mp3"
+        raise Exception("All formats failed. Check cookies or yt-dlp version.")
 
     return await loop.run_in_executor(None, run)
 
