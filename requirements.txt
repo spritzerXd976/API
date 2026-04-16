@@ -6,3 +6,4 @@ motor
 aiohttp
 yt-dlp
 youtube-search-python
+httpx==0.27.0
