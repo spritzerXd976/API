@@ -55,7 +55,9 @@ async def download_audio(link: str):
         os.makedirs("downloads", exist_ok=True)
 
         ydl_opts = {
+            # ✅ FIX: better format selection (no error)
             "format": "bestaudio/best",
+
             "outtmpl": "downloads/%(id)s.%(ext)s",
             "quiet": True,
 
@@ -66,8 +68,10 @@ async def download_audio(link: str):
                 "Accept-Language": "en-US,en;q=0.9",
             },
 
+            # extra stability
             "nocheckcertificate": True,
             "geo_bypass": True,
+            "noplaylist": True,
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
