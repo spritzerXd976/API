@@ -55,9 +55,7 @@ async def download_audio(link: str):
         os.makedirs("downloads", exist_ok=True)
 
         ydl_opts = {
-            # ✅ FIX: better format selection (no error)
-            "format": "bestaudio/best",
-
+            "format": "bestaudio[ext=m4a]/bestaudio[ext=webm]/bestaudio/best",
             "outtmpl": "downloads/%(id)s.%(ext)s",
             "quiet": True,
 
@@ -68,15 +66,19 @@ async def download_audio(link: str):
                 "Accept-Language": "en-US,en;q=0.9",
             },
 
-            # extra stability
             "nocheckcertificate": True,
             "geo_bypass": True,
-            "noplaylist": True,
+            "postprocessors": [{
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }],
         }
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(link, download=True)
-            return ydl.prepare_filename(info)
+            base = os.path.splitext(ydl.prepare_filename(info))[0]
+            return base + ".mp3"
 
     return await loop.run_in_executor(None, run)
 
