@@ -4,13 +4,12 @@ services:
     runtime: python
     plan: free
 
+    pythonVersion: 3.10   # ✅ THIS IS THE REAL FIX
+
     buildCommand: pip install -r requirements.txt
     startCommand: python AdityaHalder.py
 
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.10
-
       - key: API_ID
         sync: false
       - key: API_HASH
